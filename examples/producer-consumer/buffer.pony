@@ -52,4 +52,10 @@ actor Buffer
     else
       _out.print(debug_string + ": Storing product")
       _products.push(product)
+      
+      // we saw this assert fire: when run with n = 10_000
+      // producer-consumer/buffer.pony:55
+      // Buffer.store_product: error: Assert.lte violated! want: 3 <= 2 since '_products.size should always be <= capacity'
+
+      Assert.lte[USize](_products.size(), capacity, "_products.size should always be <= capacity")
     end
