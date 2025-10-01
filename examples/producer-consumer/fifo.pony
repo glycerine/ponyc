@@ -52,7 +52,7 @@ actor Fifo
         let idx = _ringBeg
         _ringBeg = (_ringBeg + 1) % _cap
         
-        match _buf(idx)? = None
+        match _buf(idx)? = None // assignment returns the old value
         | let p: Product iso => consume p
         else
             error
