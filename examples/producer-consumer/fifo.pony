@@ -1,6 +1,6 @@
 use "pony_test"
 use "time"
-    
+use "collections"
 
 actor MainFifo // acts as our test parent in _TestInfoBasic, for the *Done behaviors.
   let _out: OutStream
@@ -45,7 +45,7 @@ actor Fifo
     // treat _buf like a ring buffer so we don't
     // have to do so much try / end error handling.
     var _ringBeg: USize = 0
-    var _ringReadable: USize = 0 // replace .size() with this.
+    var _ringReadable: USize = 0 
 
     fun ref popfront(): Product iso^? =>
         _ringReadable = _ringReadable - 1      
@@ -73,11 +73,8 @@ actor Fifo
         _cap = n
         _out = out
         _buf = Array[(Product iso|None)](n.usize()) // set capacity. use if Product is class.
-        var i: USize = 0
-        while i < n do
-            //let prod:Product iso = Product(0)
-            _buf.push(None) // consume prod')
-            i=i+1
+        for i in Range(0, n) do
+            _buf.push(None)
         end
         //_buf = Array[Product val].init(0, n.usize()) // set capacity. use if Product is I64 type
         //_out.print("fifo: created with capacity: " + n.string() + " and size: " + _buf.size().string())
@@ -135,7 +132,7 @@ actor Fifo
             _waitQcons.push((fromCons, next))
             return
         end
-        //Assert.lte[I64](_buf.size().i64(), _cap, "buf must be <= _cap")
+        Assert.lte[USize](_ringReadable, _cap, "buf must be <= _cap")
         //_out.print("fifo: consumerRequestsNext() has _buf.size = " + _buf.size().string())
        
         try
@@ -147,9 +144,7 @@ actor Fifo
             //let x_id  = x.i64()
             //Assert.equal[I64](x, next)
             //Assert.equalbox[Product box](x, next)
-            //if x != next then
-            //  Assert.crash("x != next")
-            //end
+            Assert(x.id == next, "x.id must == next")
             
             fromCons.consumeThis(consume x)
         end
