@@ -19,21 +19,21 @@ actor MainFifo // acts as our test parent in _TestInfoBasic, for the *Done behav
         _out.print("elapsed nanosec = " + elap.string())    
         h.complete(true) // success, stop the long_test timeout
 
-// class val Product
-//     let id: I64
-//     new create(id':I64) =>
-//         id = id'
-//     fun string(): String =>
-//         id.string()
+class iso Product
+    let id: I64
+    new create(id':I64) =>
+        id = id'
+    fun string(): String =>
+        id.string()
 
-type Product is I64        
+//type Product is I64
 
 
 actor Fifo
     let _out: OutStream
     let _cap: USize
-    //let _buf: Array[Product iso]
-    let _buf: Array[Product val]
+    let _buf: Array[(Product iso | None)]
+    //let _buf: Array[Product val]
     var _promised: I64 = 0
     //var _isClosed: Bool = false
     let _h:TestHelper
@@ -47,18 +47,21 @@ actor Fifo
     var _ringBeg: USize = 0
     var _ringReadable: USize = 0 // replace .size() with this.
 
-    fun ref popfront(): Product val? =>
-      _ringReadable = _ringReadable -1
-      let front = _buf(_ringBeg)?
-      _ringBeg = _ringBeg + 1
-      if _ringBeg == _cap then
-        _ringBeg = 0
-      end
-      front
+    fun ref popfront(): Product iso^? =>
+        _ringReadable = _ringReadable - 1      
+        let idx = _ringBeg
+        _ringBeg = (_ringBeg + 1) % _cap
+        
+        match _buf(idx)? = None
+        | let p: Product iso => consume p
+        else
+            error
+        end
+    
 
-    fun ref pushback(p: Product val)? =>
+    fun ref pushback(p: Product iso)? =>
         let writeStart = (_ringBeg + _ringReadable) % _cap
-        _buf(writeStart)? = p
+        _buf(writeStart)? = consume p
         _ringReadable = _ringReadable + 1
     
     fun ref _clearQs() =>
@@ -69,8 +72,14 @@ actor Fifo
         _h = h
         _cap = n
         _out = out
-        //_buf = Array[Product iso].init(n.usize()) // set capacity. use if Product is class.
-        _buf = Array[Product val].init(0, n.usize()) // set capacity. use if Product is I64 type
+        _buf = Array[(Product iso|None)](n.usize()) // set capacity. use if Product is class.
+        var i: USize = 0
+        while i < n do
+            //let prod:Product iso = Product(0)
+            _buf.push(None) // consume prod')
+            i=i+1
+        end
+        //_buf = Array[Product val].init(0, n.usize()) // set capacity. use if Product is I64 type
         //_out.print("fifo: created with capacity: " + n.string() + " and size: " + _buf.size().string())
         _env = h.env
 
@@ -130,7 +139,7 @@ actor Fifo
         //_out.print("fifo: consumerRequestsNext() has _buf.size = " + _buf.size().string())
        
         try
-            var x = popfront()?          
+            let x = popfront()?          
             //var x = _buf.delete(0)?
             //_out.print("fifo: consumerRequestsNext about to provide = " + x.string() + " ; now _buf.size = " + _buf.size().string())
             // assert we get the expected next
@@ -146,8 +155,8 @@ actor Fifo
         end
         nudgeProducer()
 
-    //be append(producer:Producer, product:Product iso) => // class Product
-    be append(producer:Producer, product:Product val) =>   // type Product is I64
+    be append(producer:Producer, product:Product iso) => // class Product
+    //be append(producer:Producer, product:Product val) =>   // type Product is I64
       //if _isClosed then
       //  return
       //end
@@ -249,8 +258,8 @@ actor Consumer
         //_out.print("consumer: started. _next = " + _next.string())
         _fifo.consumerRequestsNext(this, _next)
 
-    //be consumeThis(prod: Product iso) => // class Product
-  be consumeThis(prod: Product val) =>   // type Product is I64
+  be consumeThis(prod: Product iso) => // class Product
+  //be consumeThis(prod: Product val) =>   // type Product is I64
     //Assert.equal[I64](prod, _saw+1) // consume must happen in order so prod must == _saw+1
     _saw = _saw + 1
     //_out.print("consumer: has consumed " + prod.string())
