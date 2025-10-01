@@ -50,7 +50,7 @@ class iso _TestFifoBasic is UnitTest
 
     var mf = MainFifo(h)
 
-    let numToProduce: I64 = 100 // 1_000_000
+    let numToProduce: I64 = 1_000_000
     let numToConsume: I64 = numToProduce
     let fifoSize: USize = 2
     let fifo = Fifo(out, fifoSize, h)

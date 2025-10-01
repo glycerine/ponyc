@@ -1,5 +1,5 @@
 all:
-	#go build -buildvcs=false -o gopc
+	go build -buildvcs=false -o gopc
 	ponyc && ./producer-consumer --ponymaxthreads 1 --ponypin
 
 ## make configure runtime-bitcode=yes
