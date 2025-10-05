@@ -49,14 +49,12 @@ TEST_F(DartSrcTest, HelloWorld)
     "    env.out.print(\"Hello, world!\")\n";
 
   _expected =
-    "class Main {\n"
-    "  Main(var env) {\n"
-    "    env.out.print(\"Hello, world!\");\n"
-    "  }\n"
+    "void main() {\n"
+    "    print('Hello, world!');\n"
     "}\n";
 
   // TODO: get the output from the DARTSRC pass
-  // and compare it to _expected.
+  // into got_dart_src and compare it to _expected.
   // For now, just run the pass and assert true.
   DO(test(src));
 }
